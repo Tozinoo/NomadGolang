@@ -20,9 +20,11 @@ type extractedJob struct {
 	summary  string
 }
 
-var baseURL = "https://kr.indeed.com/jobs?q=python&limit=50"
+var searching = "python"
+var baseURL = fmt.Sprintf("https://kr.indeed.com/jobs?q=%s&limit=50", searching)
 
 func main() {
+	fmt.Println(baseURL)
 	var jobs []extractedJob
 	totalPages := getPages()
 
@@ -32,12 +34,14 @@ func main() {
 	}
 
 	writeJobs(jobs)
-	fmt.Println("asdf")
+	fmt.Println("Done, extracted", len(jobs))
 }
 
 func writeJobs(jobs []extractedJob) {
 	file, err := os.Create("jobs.csv")
 	checkErr(err)
+	utf8bom := []byte{0xEF, 0xBB, 0xBF}
+	file.Write(utf8bom)
 
 	w := csv.NewWriter(file)
 	defer w.Flush()
@@ -46,6 +50,12 @@ func writeJobs(jobs []extractedJob) {
 
 	wErr := w.Write(headers)
 	checkErr(wErr)
+
+	for _, job := range jobs {
+		jobSlice := []string{"https://kr.indeed.com/viewjob?jk=" + job.id, job.title, job.location, job.salary, job.summary}
+		wJErr := w.Write(jobSlice)
+		checkErr(wJErr)
+	}
 
 }
 
